@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B95DC3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arbor.Castanea.App", "Arbor.Castanea.App\Arbor.Castanea.App.csproj", "{DF2FD1C0-DA97-4968-A7DC-AB4305DC9E55}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arbor.Castanea.Tests.Integration", "Arbor.Castanea.Tests.Integration\Arbor.Castanea.Tests.Integration.csproj", "{326253EF-91B5-4702-9284-CB0896CB0C06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{DF2FD1C0-DA97-4968-A7DC-AB4305DC9E55}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF2FD1C0-DA97-4968-A7DC-AB4305DC9E55}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF2FD1C0-DA97-4968-A7DC-AB4305DC9E55}.Release|Any CPU.Build.0 = Release|Any CPU
+		{326253EF-91B5-4702-9284-CB0896CB0C06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{326253EF-91B5-4702-9284-CB0896CB0C06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{326253EF-91B5-4702-9284-CB0896CB0C06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{326253EF-91B5-4702-9284-CB0896CB0C06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
