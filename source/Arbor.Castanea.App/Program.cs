@@ -38,6 +38,7 @@ namespace Arbor.Castanea.App
             var repositoriesFile = args.FirstOrDefault();
 
             CastaneaLogger.SetLoggerAction(Console.WriteLine);
+            CastaneaLogger.SetErrorLoggerAction(Console.Error.WriteLine);
 
             var app = new CastaneaApplication();
 

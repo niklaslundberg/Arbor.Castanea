@@ -71,11 +71,17 @@ namespace Arbor.Castanea
 
             foreach (var repository in nuGetRepositories)
             {
-                CastaneaLogger.Write(string.Format("Installing packages in '{0}'", repository.Path));
+                CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'", outputDir, repository.Path));
 
-                var args = string.Format("install {0} -OutputDirectory \"{1}\"", repository.Path, outputDir);
-                var process = new Process {StartInfo = new ProcessStartInfo(exePath) {Arguments = args}};
+                var args = string.Format("install \"{0}\" -OutputDirectory \"{1}\" -Verbosity Detailed", repository.Path, outputDir);
+                var process = new Process {StartInfo = new ProcessStartInfo(exePath) {Arguments = args, RedirectStandardError = true, RedirectStandardOutput = true, UseShellExecute = false}};
+
+                process.OutputDataReceived += (sender, eventArgs) => CastaneaLogger.Write(eventArgs.Data);
+                process.ErrorDataReceived += (sender, eventArgs) => CastaneaLogger.WriteError(eventArgs.Data);
+
                 process.Start();
+                process.BeginErrorReadLine();
+                process.BeginOutputReadLine();
                 process.WaitForExit();
                 var exitCode = process.ExitCode;
 
@@ -86,8 +92,8 @@ namespace Arbor.Castanea
                 else
                 {
                     throw new InvalidOperationException(
-                        string.Format("Failed to install packages in '{0}'. The process exited with code {1}",
-                                      repository.Path, exitCode));
+                        string.Format("Failed to install packages in '{0}'. The process '{1}' exited with code {2}",
+                                      repository.Path, process.StartInfo.FileName, exitCode));
                 }
             }
 
