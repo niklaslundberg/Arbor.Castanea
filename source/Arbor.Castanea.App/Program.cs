@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 
 namespace Arbor.Castanea.App
@@ -9,11 +8,6 @@ namespace Arbor.Castanea.App
         static int Main(string[] args)
         {
             var exitCode = TryRunApp(args);
-
-            if (Debugger.IsAttached)
-            {
-                Debugger.Break();
-            }
 
             return exitCode;
         }
@@ -35,12 +29,12 @@ namespace Arbor.Castanea.App
 
         static void RunApp(string[] args)
         {
-            var repositoriesFile = args.FirstOrDefault();
-
             CastaneaLogger.SetLoggerAction(Console.WriteLine);
             CastaneaLogger.SetErrorLoggerAction(Console.Error.WriteLine);
 
             var app = new CastaneaApplication();
+
+            var repositoriesFile = args.FirstOrDefault();
 
             var config = new NuGetConfig {RepositoriesConfig = repositoriesFile};
 

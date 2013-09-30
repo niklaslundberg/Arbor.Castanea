@@ -4,23 +4,23 @@ namespace Arbor.Castanea
 {
     public static class CastaneaLogger
     {
-        static Action<string> log;
-        static Action<string> errorLog;
+        static Action<string> _log;
+        static Action<string> _errorLog;
 
         public static void SetLoggerAction(Action<string> loggerAction)
         {
-            log = loggerAction;
+            _log = loggerAction;
         }
         public static void SetErrorLoggerAction(Action<string> loggerAction)
         {
-            errorLog = loggerAction;
+            _errorLog = loggerAction;
         }
 
         public static void Write(string message)
         {
-            if (log != null)
+            if (_log != null)
             {
-                log(message);
+                _log(message);
             }
         }
 
@@ -31,9 +31,9 @@ namespace Arbor.Castanea
                 return;
             }
 
-            if (errorLog != null)
+            if (_errorLog != null)
             {
-                errorLog(message);
+                _errorLog(message);
             }
         }
     }

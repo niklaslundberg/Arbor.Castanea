@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Xml.Linq;
+using Arbor.Aesculus.Core;
 
 namespace Arbor.Castanea
 {
@@ -37,9 +39,9 @@ namespace Arbor.Castanea
 
             if (repositoryFileDirectory == null)
             {
-                throw new DirectoryNotFoundException(string.Format(
-                    "Could not find directory repository directory '{0}'",
-                    fileInfo.DirectoryName));
+                var message = string.Format("Could not find directory repository directory '{0}'",
+                                            fileInfo.DirectoryName);
+                throw new DirectoryNotFoundException(message);
             }
 
             var repositories =
@@ -52,52 +54,70 @@ namespace Arbor.Castanea
             return repositories;
         }
 
-        public int RestorePackages(IReadOnlyCollection<NuGetRepository> nuGetRepositories, NuGetConfig nuGetConfig)
+        public int RestorePackages(IReadOnlyCollection<NuGetRepository> repositories, NuGetConfig config)
         {
-            var exePath = nuGetConfig.NuGetExePath;
-            var outputDir = nuGetConfig.OutputDirectory;
+            var exePath = config.NuGetExePath;
+            var outputDir = config.OutputDirectory;
 
-            if (string.IsNullOrWhiteSpace(outputDir) || !Directory.Exists(outputDir))
+            if (!Directory.Exists(outputDir))
             {
-                throw new DirectoryNotFoundException(string.Format("The restore output directory '{0}' does not exist",
-                                                                   outputDir));
-            }
+                var message = string.Format("The restore output directory '{0}' does not exist", outputDir);
 
+                Console.WriteLine(message);
+                Directory.CreateDirectory(outputDir);
+            }
+            
             if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
             {
                 throw new FileNotFoundException(string.Format("NuGet.exe could not be found at path '{0}'", exePath));
             }
 
-
-            foreach (var repository in nuGetRepositories)
+            foreach (var repository in repositories)
             {
-                CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'", outputDir, repository.Path));
-
-                var args = string.Format("install \"{0}\" -OutputDirectory \"{1}\" -Verbosity Detailed", repository.Path, outputDir);
-                var process = new Process {StartInfo = new ProcessStartInfo(exePath) {Arguments = args, RedirectStandardError = true, RedirectStandardOutput = true, UseShellExecute = false}};
-
-                process.OutputDataReceived += (sender, eventArgs) => CastaneaLogger.Write(eventArgs.Data);
-                process.ErrorDataReceived += (sender, eventArgs) => CastaneaLogger.WriteError(eventArgs.Data);
-
-                process.Start();
-                process.BeginErrorReadLine();
-                process.BeginOutputReadLine();
-                process.WaitForExit();
-                var exitCode = process.ExitCode;
-
-                if (exitCode == 0)
-                {
-                    CastaneaLogger.Write(string.Format("Successfully installed packages in '{0}'", repository.Path));
-                }
-                else
-                {
-                    throw new InvalidOperationException(
-                        string.Format("Failed to install packages in '{0}'. The process '{1}' exited with code {2}",
-                                      repository.Path, process.StartInfo.FileName, exitCode));
-                }
+                RestorePackage(outputDir, repository, exePath);
             }
 
-            return nuGetRepositories.Count;
+            return repositories.Count;
+        }
+
+        static void RestorePackage(string outputDir, NuGetRepository repository, string exePath)
+        {
+            CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'",
+                                               outputDir, repository.Path));
+
+            var args = string.Format("install \"{0}\" -OutputDirectory \"{1}\" -Verbosity Detailed", repository.Path,
+                                     outputDir);
+            var process = new Process
+                              {
+                                  StartInfo =
+                                      new ProcessStartInfo(exePath)
+                                          {
+                                              Arguments = args,
+                                              RedirectStandardError = true,
+                                              RedirectStandardOutput = true,
+                                              UseShellExecute = false
+                                          }
+                              };
+
+            process.OutputDataReceived += (sender, eventArgs) => CastaneaLogger.Write(eventArgs.Data);
+            process.ErrorDataReceived += (sender, eventArgs) => CastaneaLogger.WriteError(eventArgs.Data);
+
+            process.Start();
+            process.BeginErrorReadLine();
+            process.BeginOutputReadLine();
+            process.WaitForExit();
+            var exitCode = process.ExitCode;
+
+            if (exitCode == 0)
+            {
+                CastaneaLogger.Write(string.Format("Successfully installed packages in '{0}'", repository.Path));
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    string.Format("Failed to install packages in '{0}'. The process '{1}' exited with code {2}",
+                                  repository.Path, process.StartInfo.FileName, exitCode));
+            }
         }
 
         public NuGetConfig EnsureConfig(NuGetConfig nuGetConfig)
@@ -115,26 +135,41 @@ namespace Arbor.Castanea
 
             if (string.IsNullOrWhiteSpace(config.NuGetExePath))
             {
+                Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
                 config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
             }
 
+            var nuGetExeExists = File.Exists(config.NuGetExePath);
+
+            if (!nuGetExeExists)
+            {
+                var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+                Directory.CreateDirectory(tempFolder);
+                Console.WriteLine("'{0}' does not exist, downloading NuGet.exe from NuGet.org", config.NuGetExePath);
+
+                try
+                {
+                    var tempPath = Path.Combine(tempFolder, "nuget.exe");
+                    var webClient = new WebClient();
+                    webClient.DownloadFile("https://nuget.org/nuget.exe", tempPath);
+                    config.NuGetExePath = tempPath;
+                }
+                catch (WebException ex)
+                {
+                    Console.WriteLine(ex);
+                    Directory.Delete(tempFolder, true);
+                }
+            }
+            
             return config;
-        }
-
-        DirectoryInfo WalkToRoot(DirectoryInfo directoryInfo)
-        {
-            var allowParent = directoryInfo.EnumerateDirectories().All(dir => !dir.Name.Equals(".git"));
-
-            var root = allowParent ? WalkToRoot(directoryInfo.Parent) : directoryInfo;
-
-            return root;
         }
 
         string FindRepositoriesConfig()
         {
-            var appDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            var vcsRoot = VcsPathHelper.FindVcsRootPath();
 
-            var directory = FindRepositoriesDirectory(WalkToRoot(appDir));
+            var directory = FindRepositoriesDirectory(new DirectoryInfo(vcsRoot));
 
             if (directory == null)
             {

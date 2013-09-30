@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 
 namespace Arbor.Castanea
@@ -7,18 +8,33 @@ namespace Arbor.Castanea
     {
         public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig)
         {
-            Assembly entryAssembly = Assembly.GetExecutingAssembly();
-            Version version = entryAssembly.GetName().Version;
-            
-            CastaneaLogger.Write(GetType().Namespace + ", " + version);
+            try
+            {
+                Assembly entryAssembly = Assembly.GetExecutingAssembly();
+                Version version = entryAssembly.GetName().Version;
 
-            var helper = new NuGetHelper();
+                CastaneaLogger.Write(GetType().Namespace + ", " + version);
 
-            var repositoriesConfig = helper.EnsureConfig(nuGetConfig);
+                var helper = new NuGetHelper();
 
-            var repositories = helper.GetNuGetRepositories(repositoriesConfig);
+                var repositoriesConfig = helper.EnsureConfig(nuGetConfig);
 
-            return helper.RestorePackages(repositories, repositoriesConfig);
+                var repositories = helper.GetNuGetRepositories(repositoriesConfig);
+
+                return helper.RestorePackages(repositories, repositoriesConfig);
+            }
+            finally
+            {
+                if (nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(), StringComparison.InvariantCultureIgnoreCase) >= 0)
+                {
+                    var fileInfo = new FileInfo(nuGetConfig.NuGetExePath);
+
+                    if (Directory.Exists(fileInfo.DirectoryName))
+                    {
+                        Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                    }
+                }
+            }
         }
     }
 }
