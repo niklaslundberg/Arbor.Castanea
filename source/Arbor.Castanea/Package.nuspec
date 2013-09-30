@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Arbor.Castanea</id>
+    <version>0.0.1</version>
+    <title>Arbor.Castanea</title>
+    <authors>Niklas Lundberg</authors>
+    <owners></owners>
+    <description>
+    A NuGet package restore helper library
+    </description>
+    <releaseNotes>
+    </releaseNotes>
+    <summary>
+        A NuGet package restore helper library
+    </summary>
+    <language>en-US</language>
+    <projectUrl>https://nuget.org/packages/Arbor.Castanea.NuGet</projectUrl>
+    <iconUrl>https://nuget.org/Content/Images/packageDefaultIcon-50x50.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+    <copyright>Copyright Niklas Lundberg 2013</copyright>
+    <dependencies>
+        <group targetFramework="net45">
+            <dependency id="Arbor.Aesculus" />
+        </group>
+    </dependencies>
+    <references></references>
+    <tags></tags>
+  </metadata>
+  <files>
+    <file src="bin\Release\Arbor.Castanea.Core.dll" target="lib\net45" />
+  </files>
+</package>
