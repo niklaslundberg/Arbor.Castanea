@@ -104,13 +104,13 @@ namespace Arbor.Castanea
         {
             var config = nuGetConfig ?? new NuGetConfig();
 
-            config.RepositoriesConfig = nuGetConfig.RepositoriesConfig ?? FindRepositoriesConfig();
+            config.RepositoriesConfig = config.RepositoriesConfig ?? FindRepositoriesConfig();
 
             var configDir = new FileInfo(config.RepositoriesConfig).Directory;
 
             if (string.IsNullOrWhiteSpace(config.OutputDirectory))
             {
-                nuGetConfig.OutputDirectory = configDir.FullName;
+                config.OutputDirectory = configDir.FullName;
             }
 
             if (string.IsNullOrWhiteSpace(config.NuGetExePath))
