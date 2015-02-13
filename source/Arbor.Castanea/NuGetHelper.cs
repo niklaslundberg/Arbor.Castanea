@@ -20,36 +20,48 @@ namespace Arbor.Castanea
                 throw new ArgumentNullException("nuGetConfig");
             }
 
-            var fileInfo = new FileInfo(nuGetConfig.RepositoriesConfig);
+            List<NuGetRepository> repositories;
 
-            if (!fileInfo.Exists)
+            if (!nuGetConfig.PackageConfigFiles.Any())
             {
-                throw new FileNotFoundException(string.Format("Could not find the repositories.config file '{0}'",
-                                                              nuGetConfig.RepositoriesConfig));
+                var fileInfo = new FileInfo(nuGetConfig.RepositoriesConfig);
+
+                if (!fileInfo.Exists)
+                {
+                    throw new FileNotFoundException(string.Format("Could not find the repositories.config file '{0}'",
+                        nuGetConfig.RepositoriesConfig));
+                }
+
+                var xdoc = XDocument.Load(nuGetConfig.RepositoriesConfig);
+
+                var repositoryPaths =
+                    xdoc.Descendants("repository")
+                        .Select(repository => repository.Attribute("path").Value)
+                        .ToList();
+
+                var repositoryFileDirectory = fileInfo.Directory;
+
+                if (repositoryFileDirectory == null)
+                {
+                    var message = string.Format("Could not find directory repository directory '{0}'",
+                        fileInfo.DirectoryName);
+                    throw new DirectoryNotFoundException(message);
+                }
+
+                repositories =
+                    repositoryPaths.Select(
+                        path =>
+                            new NuGetRepository(Path.GetFullPath(Path.Combine(repositoryFileDirectory.FullName, path))))
+                        .ToList();
+
+                CastaneaLogger.Write(string.Format("Found {0} NuGet repositories", repositories.Count));
             }
-
-            var xdoc = XDocument.Load(nuGetConfig.RepositoriesConfig);
-
-            var repositoryPaths =
-                xdoc.Descendants("repository")
-                    .Select(repository => repository.Attribute("path").Value)
+            else
+            {
+                repositories = nuGetConfig.PackageConfigFiles
+                    .Select(file => new NuGetRepository(file))
                     .ToList();
-
-            var repositoryFileDirectory = fileInfo.Directory;
-
-            if (repositoryFileDirectory == null)
-            {
-                var message = string.Format("Could not find directory repository directory '{0}'",
-                                            fileInfo.DirectoryName);
-                throw new DirectoryNotFoundException(message);
             }
-
-            var repositories =
-                repositoryPaths.Select(
-                    path => new NuGetRepository(Path.GetFullPath(Path.Combine(repositoryFileDirectory.FullName, path))))
-                               .ToList();
-
-            CastaneaLogger.Write(string.Format("Found {0} NuGet repositories", repositories.Count));
 
             return repositories;
         }
@@ -124,19 +136,32 @@ namespace Arbor.Castanea
         {
             var config = nuGetConfig ?? new NuGetConfig();
 
-            config.RepositoriesConfig = config.RepositoriesConfig ?? FindRepositoriesConfig();
+            if (!config.PackageConfigFiles.Any())
+            {
+                config.RepositoriesConfig = config.RepositoriesConfig ?? FindRepositoriesConfig();
 
-            var configDir = new FileInfo(config.RepositoriesConfig).Directory;
+                var configDir = new FileInfo(config.RepositoriesConfig).Directory;
+
+                if (string.IsNullOrWhiteSpace(config.OutputDirectory))
+                {
+                    config.OutputDirectory = configDir.FullName;
+                }
+
+                if (string.IsNullOrWhiteSpace(config.NuGetExePath))
+                {
+                    Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
+                    config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(config.OutputDirectory))
             {
-                config.OutputDirectory = configDir.FullName;
+                throw new InvalidOperationException("The output directory not been specified");
             }
 
             if (string.IsNullOrWhiteSpace(config.NuGetExePath))
             {
-                Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
-                config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
+                throw new InvalidOperationException("The NuGet exe path has not been specified");
             }
 
             var nuGetExeExists = File.Exists(config.NuGetExePath);
