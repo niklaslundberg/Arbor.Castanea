@@ -18,9 +18,11 @@ namespace Arbor.Castanea.Tests.Integration
                 nuGetConfig = new NuGetConfig();
             };
 
-        Because of =
-            () => restored = app.RestoreAllSolutionPackages(nuGetConfig);
+        Because of = () =>
+            {
+                restored = app.RestoreAllSolutionPackages(nuGetConfig);
+            };
 
-        It should_restore_one_package = () => restored.ShouldEqual(1);
+        It should_restore_two_packages = () => restored.ShouldEqual(2);
     }
 }
