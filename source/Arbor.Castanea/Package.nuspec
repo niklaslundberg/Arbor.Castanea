@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Arbor.Castanea</id>
-    <version>0.0.1</version>
+    <version>$version$</version>
     <title>Arbor.Castanea</title>
     <authors>Niklas Lundberg</authors>
     <owners></owners>
@@ -15,11 +15,11 @@
         A NuGet package restore helper library
     </summary>
     <language>en-US</language>
-    <projectUrl>https://nuget.org/packages/Arbor.Castanea.NuGet</projectUrl>
+    <projectUrl>https://github.com/niklaslundberg/Arbor.Castanea</projectUrl>
     <iconUrl>https://nuget.org/Content/Images/packageDefaultIcon-50x50.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
-    <copyright>Copyright Niklas Lundberg 2013</copyright>
+    <copyright>Copyright Niklas Lundberg 2013-2015</copyright>
     <dependencies>
         <group targetFramework="net45">
             <dependency id="Arbor.Aesculus" />
@@ -29,6 +29,6 @@
     <tags></tags>
   </metadata>
   <files>
-    <file src="bin\Release\Arbor.Castanea.Core.dll" target="lib\net45" />
+    <file src="bin\$configuration$\Arbor.Castanea.Core.dll" target="lib\net45" />
   </files>
 </package>
