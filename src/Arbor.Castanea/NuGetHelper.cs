@@ -97,8 +97,16 @@ namespace Arbor.Castanea
             CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'",
                                                outputDir, repository.Path));
 
-            var args = string.Format("install \"{0}\" -OutputDirectory \"{1}\" -Verbosity Detailed", repository.Path,
+            var args = string.Format("restore \"{0}\" -PackagesDirectory \"{1}\" -NonInteractive", repository.Path,
                                      outputDir);
+
+            if (CastaneaLogger.DebugLog != null)
+            {
+                args += " -Verbosity Detailed";
+            }
+
+            CastaneaLogger.WriteDebug(string.Format("Running exe '{0}' with arguments: {1}", exePath, args));
+
             var process = new Process
                               {
                                   StartInfo =
@@ -111,8 +119,20 @@ namespace Arbor.Castanea
                                           }
                               };
 
-            process.OutputDataReceived += (sender, eventArgs) => CastaneaLogger.Write(eventArgs.Data);
-            process.ErrorDataReceived += (sender, eventArgs) => CastaneaLogger.WriteError(eventArgs.Data);
+            process.OutputDataReceived += (sender, eventArgs) =>
+            {
+                if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+                {
+                    CastaneaLogger.Write(eventArgs.Data);
+                }
+            };
+            process.ErrorDataReceived += (sender, eventArgs) =>
+            {
+                if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+                {
+                    CastaneaLogger.WriteError(eventArgs.Data);
+                }
+            };
 
             process.Start();
             process.BeginErrorReadLine();
@@ -138,19 +158,54 @@ namespace Arbor.Castanea
 
             if (!config.PackageConfigFiles.Any())
             {
-                config.RepositoriesConfig = config.RepositoriesConfig ?? FindRepositoriesConfig();
-
-                var configDir = new FileInfo(config.RepositoriesConfig).Directory;
-
-                if (string.IsNullOrWhiteSpace(config.OutputDirectory))
+                if (config.RepositoriesConfig != null &&
+                    config.RepositoriesConfig.EndsWith("repositories.config",
+                        StringComparison.InvariantCultureIgnoreCase))
                 {
-                    config.OutputDirectory = configDir.FullName;
+                    var configDir = new FileInfo(config.RepositoriesConfig).Directory;
+
+                    if (string.IsNullOrWhiteSpace(config.OutputDirectory))
+                    {
+                        config.OutputDirectory = configDir.FullName;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(config.NuGetExePath))
+                    {
+                        Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
+                        config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
+                    }
                 }
-
-                if (string.IsNullOrWhiteSpace(config.NuGetExePath))
+                else if (!string.IsNullOrWhiteSpace(config.RepositoriesConfig))
                 {
-                    Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
-                    config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
+                    var root = VcsPathHelper.FindVcsRootPath(config.RepositoriesConfig);
+
+                    var rootDirectory = new DirectoryInfo(root);
+
+                    if (!rootDirectory.Exists)
+                    {
+                        throw new Exception(string.Format("Cannot scan directory '{0}' for package config files since it does not exist", rootDirectory.FullName));
+                    }
+
+                    var packageConfigFiles = rootDirectory.GetFiles("packages.config", SearchOption.AllDirectories);
+
+                    config.PackageConfigFiles.AddRange(packageConfigFiles.Select(file => file.FullName));
+                }
+                else
+                {
+                    config.RepositoriesConfig = FindRepositoriesConfig();
+
+                    var configDir = new FileInfo(config.RepositoriesConfig).Directory;
+
+                    if (string.IsNullOrWhiteSpace(config.OutputDirectory))
+                    {
+                        config.OutputDirectory = configDir.FullName;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(config.NuGetExePath))
+                    {
+                        Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
+                        config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
+                    }
                 }
             }
 

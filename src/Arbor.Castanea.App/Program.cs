@@ -29,9 +29,6 @@ namespace Arbor.Castanea.App
 
         static void RunApp(string[] args)
         {
-            CastaneaLogger.SetLoggerAction(Console.WriteLine);
-            CastaneaLogger.SetErrorLoggerAction(Console.Error.WriteLine);
-
             var app = new CastaneaApplication();
 
             var repositoriesFile = args.FirstOrDefault();
@@ -47,8 +44,8 @@ namespace Arbor.Castanea.App
             {
                 config.NuGetExePath = args[2];
             }
-
-            app.RestoreAllSolutionPackages(config);
+            
+            app.RestoreAllSolutionPackages(config, logInfo: Console.WriteLine, logError: Console.Error.WriteLine);
         }
     }
 }

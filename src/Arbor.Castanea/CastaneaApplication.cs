@@ -6,8 +6,12 @@ namespace Arbor.Castanea
 {
     public class CastaneaApplication
     {
-        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig)
+        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null, Action<string> logError = null, Action<string> logDebug = null)
         {
+            CastaneaLogger.SetErrorLoggerAction(logError);
+            CastaneaLogger.SetLoggerAction(logInfo);
+            CastaneaLogger.SetLoggerDebugAction(logDebug);
+
             try
             {
                 Assembly entryAssembly = Assembly.GetExecutingAssembly();
@@ -25,13 +29,18 @@ namespace Arbor.Castanea
             }
             finally
             {
-                if (nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(), StringComparison.InvariantCultureIgnoreCase) >= 0)
+                if (!string.IsNullOrWhiteSpace(nuGetConfig.NuGetExePath))
                 {
-                    var fileInfo = new FileInfo(nuGetConfig.NuGetExePath);
-
-                    if (Directory.Exists(fileInfo.DirectoryName))
+                    if (
+                        nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(), StringComparison.InvariantCultureIgnoreCase) >=
+                        0)
                     {
-                        Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                        var fileInfo = new FileInfo(nuGetConfig.NuGetExePath);
+
+                        if (Directory.Exists(fileInfo.DirectoryName))
+                        {
+                            Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                        }
                     }
                 }
             }
