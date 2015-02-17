@@ -86,31 +86,41 @@ namespace Arbor.Castanea
 
             foreach (var repository in repositories)
             {
-                RestorePackage(outputDir, repository, exePath);
+                RestorePackage(repository, config);
             }
 
             return repositories.Count;
         }
 
-        static void RestorePackage(string outputDir, NuGetRepository repository, string exePath)
+        static void RestorePackage(NuGetRepository repository, NuGetConfig config)
         {
             CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'",
-                                               outputDir, repository.Path));
+                                               config.OutputDirectory, repository.Path));
 
             var args = string.Format("restore \"{0}\" -PackagesDirectory \"{1}\" -NonInteractive", repository.Path,
-                                     outputDir);
+                                     config.OutputDirectory);
 
             if (CastaneaLogger.DebugLog != null)
             {
                 args += " -Verbosity Detailed";
             }
 
-            CastaneaLogger.WriteDebug(string.Format("Running exe '{0}' with arguments: {1}", exePath, args));
+            if (config.DisableParallelProcessing)
+            {
+                args += " -DisableParallelProcessing";
+            }
+
+            if (config.NoCache)
+            {
+                args += " -NoCache";
+            }
+
+            CastaneaLogger.WriteDebug(string.Format("Running exe '{0}' with arguments: {1}", config.NuGetExePath, args));
 
             var process = new Process
                               {
                                   StartInfo =
-                                      new ProcessStartInfo(exePath)
+                                      new ProcessStartInfo(config.NuGetExePath)
                                           {
                                               Arguments = args,
                                               RedirectStandardError = true,

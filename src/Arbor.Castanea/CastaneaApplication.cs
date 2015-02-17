@@ -6,6 +6,14 @@ namespace Arbor.Castanea
 {
     public class CastaneaApplication
     {
+        /// <summary>
+        /// Returns the number of packages.config files that have been restored
+        /// </summary>
+        /// <param name="nuGetConfig"></param>
+        /// <param name="logInfo"></param>
+        /// <param name="logError"></param>
+        /// <param name="logDebug"></param>
+        /// <returns></returns>
         public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null, Action<string> logError = null, Action<string> logDebug = null)
         {
             CastaneaLogger.SetErrorLoggerAction(logError);

@@ -44,7 +44,25 @@ namespace Arbor.Castanea.App
             {
                 config.NuGetExePath = args[2];
             }
-            
+
+            if (args.Length > 3)
+            {
+                string argument = args[3];
+
+                config.DisableParallelProcessing = argument != null &&
+                                                   argument.Equals("DisableParallelProcessing",
+                                                       StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            if (args.Length > 4)
+            {
+                string argument = args[4];
+
+                config.NoCache = argument != null &&
+                                                   argument.Equals("NoCache",
+                                                       StringComparison.InvariantCultureIgnoreCase);
+            }
+
             app.RestoreAllSolutionPackages(config, logInfo: Console.WriteLine, logError: Console.Error.WriteLine);
         }
     }

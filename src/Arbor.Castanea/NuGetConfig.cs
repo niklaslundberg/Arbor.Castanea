@@ -11,5 +11,8 @@ namespace Arbor.Castanea
         public string NuGetExePath { get; set; }
 
         public string OutputDirectory { get; set; }
+
+        public bool DisableParallelProcessing { get; set; }
+        public bool NoCache { get; set; }
     }
 }
