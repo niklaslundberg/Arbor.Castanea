@@ -13,8 +13,9 @@ namespace Arbor.Castanea
         /// <param name="logInfo"></param>
         /// <param name="logError"></param>
         /// <param name="logDebug"></param>
+        /// <param name="removeNuGetDirectoryAfterRestore"></param>
         /// <returns></returns>
-        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null, Action<string> logError = null, Action<string> logDebug = null)
+        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null, Action<string> logError = null, Action<string> logDebug = null, bool removeNuGetDirectoryAfterRestore = false)
         {
             CastaneaLogger.SetErrorLoggerAction(logError);
             CastaneaLogger.SetLoggerAction(logInfo);
@@ -37,17 +38,21 @@ namespace Arbor.Castanea
             }
             finally
             {
-                if (!string.IsNullOrWhiteSpace(nuGetConfig.NuGetExePath))
+                if (removeNuGetDirectoryAfterRestore)
                 {
-                    if (
-                        nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(), StringComparison.InvariantCultureIgnoreCase) >=
-                        0)
+                    if (!string.IsNullOrWhiteSpace(nuGetConfig.NuGetExePath))
                     {
-                        var fileInfo = new FileInfo(nuGetConfig.NuGetExePath);
-
-                        if (Directory.Exists(fileInfo.DirectoryName))
+                        if (
+                            nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(),
+                                StringComparison.InvariantCultureIgnoreCase) >=
+                            0)
                         {
-                            Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                            var fileInfo = new FileInfo(nuGetConfig.NuGetExePath);
+
+                            if (Directory.Exists(fileInfo.DirectoryName))
+                            {
+                                Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                            }
                         }
                     }
                 }
