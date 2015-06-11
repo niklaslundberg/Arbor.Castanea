@@ -33,6 +33,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Arbor.Aesculus.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Arbor.Aesculus.1.0.0\lib\net45\Arbor.Aesculus.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Machine.Specifications, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Machine.Specifications.0.9.1\lib\net45\Machine.Specifications.dll</HintPath>
@@ -53,6 +57,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="VcsTestPathHelper.cs" />
     <Compile Include="when_restoring_packages_with_empty_configuration_in_this_solution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="when_restoring_packages_with_no_parameters_in_this_solution.cs" />
