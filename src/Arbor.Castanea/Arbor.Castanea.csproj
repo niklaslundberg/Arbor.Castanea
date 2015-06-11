@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="CastaneaApplication.cs" />
     <Compile Include="CastaneaLogger.cs" />
+    <Compile Include="ExceptionExtensions.cs" />
     <Compile Include="NuGetConfig.cs" />
     <Compile Include="NuGetRepository.cs" />
     <Compile Include="NuGetHelper.cs" />

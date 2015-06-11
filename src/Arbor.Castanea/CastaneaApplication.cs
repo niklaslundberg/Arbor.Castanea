@@ -15,7 +15,7 @@ namespace Arbor.Castanea
         /// <param name="logDebug"></param>
         /// <param name="removeNuGetDirectoryAfterRestore"></param>
         /// <returns></returns>
-        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null, Action<string> logError = null, Action<string> logDebug = null, bool removeNuGetDirectoryAfterRestore = false)
+        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null, Action<string> logError = null, Action<string> logDebug = null, bool removeNuGetDirectoryAfterRestore = false, Func<string, string> findVcsRootPath = null)
         {
             CastaneaLogger.SetErrorLoggerAction(logError);
             CastaneaLogger.SetLoggerAction(logInfo);
@@ -30,7 +30,7 @@ namespace Arbor.Castanea
 
                 var helper = new NuGetHelper();
 
-                var repositoriesConfig = helper.EnsureConfig(nuGetConfig);
+                var repositoriesConfig = helper.EnsureConfig(nuGetConfig, findVcsRootPath);
 
                 var repositories = helper.GetNuGetRepositories(repositoriesConfig);
 

@@ -190,8 +190,10 @@ namespace Arbor.Castanea
             }
         }
 
-        public NuGetConfig EnsureConfig(NuGetConfig nuGetConfig)
+        public NuGetConfig EnsureConfig(NuGetConfig nuGetConfig, Func<string, string> findVcsRoot = null)
         {
+            Func<string, string> usedFindVcsRoot = findVcsRoot ?? (VcsPathHelper.FindVcsRootPath);
+
             var config = nuGetConfig ?? new NuGetConfig();
 
             if (!config.PackageConfigFiles.Any())
@@ -215,7 +217,7 @@ namespace Arbor.Castanea
                 }
                 else if (!string.IsNullOrWhiteSpace(config.RepositoriesConfig))
                 {
-                    var root = VcsPathHelper.FindVcsRootPath(config.RepositoriesConfig);
+                    var root = usedFindVcsRoot(config.RepositoriesConfig);
 
                     var rootDirectory = new DirectoryInfo(root);
 
@@ -233,7 +235,7 @@ namespace Arbor.Castanea
                 }
                 else
                 {
-                    config.RepositoriesConfig = FindRepositoriesConfig();
+                    config.RepositoriesConfig = FindRepositoriesConfig(usedFindVcsRoot);
 
                     var configDir = new FileInfo(config.RepositoriesConfig).Directory;
 
@@ -286,9 +288,9 @@ namespace Arbor.Castanea
             return config;
         }
 
-        string FindRepositoriesConfig()
+        string FindRepositoriesConfig(Func<string, string> usedFindVcsRoot)
         {
-            var vcsRoot = VcsPathHelper.FindVcsRootPath();
+            var vcsRoot = usedFindVcsRoot(null);
 
             var directory = FindRepositoriesDirectory(new DirectoryInfo(vcsRoot));
 

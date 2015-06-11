@@ -1,10 +1,9 @@
 ﻿using System;
 using Machine.Specifications;
-using Machine.Specifications.Model;
 
 namespace Arbor.Castanea.Tests.Integration
 {
-    [Subject(typeof (Subject))]
+    [Subject(typeof (CastaneaApplication))]
     public class when_restoring_packages_with_no_parameters_in_this_solution
     {
         static CastaneaApplication app;
@@ -12,14 +11,14 @@ namespace Arbor.Castanea.Tests.Integration
         static int restored;
 
         Establish context = () =>
-            {
-                CastaneaLogger.SetLoggerAction(Console.WriteLine);
-                app = new CastaneaApplication();
-                nuGetConfig = new NuGetConfig();
-            };
+        {
+            CastaneaLogger.SetLoggerAction(Console.WriteLine);
+            app = new CastaneaApplication();
+            nuGetConfig = new NuGetConfig();
+        };
 
-        Because of =
-            () => restored = app.RestoreAllSolutionPackages(nuGetConfig);
+        Because of = () => restored = app.RestoreAllSolutionPackages(nuGetConfig,
+            findVcsRootPath: path => VcsTestPathHelper.FindVcsRootPath());
 
         It should_restore_two_packages = () => restored.ShouldEqual(2);
     }
