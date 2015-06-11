@@ -78,7 +78,7 @@ namespace Arbor.Castanea
                 Console.WriteLine(message);
                 Directory.CreateDirectory(outputDir);
             }
-            
+
             if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
             {
                 throw new FileNotFoundException(string.Format("NuGet.exe could not be found at path '{0}'", exePath));
@@ -95,10 +95,10 @@ namespace Arbor.Castanea
         static void RestorePackage(NuGetRepository repository, NuGetConfig config)
         {
             CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'",
-                                               config.OutputDirectory, repository.Path));
+                config.OutputDirectory, repository.Path));
 
             var args = string.Format("restore \"{0}\" -PackagesDirectory \"{1}\" -NonInteractive", repository.Path,
-                                     config.OutputDirectory);
+                config.OutputDirectory);
 
             if (CastaneaLogger.DebugLog != null)
             {
@@ -118,16 +118,16 @@ namespace Arbor.Castanea
             CastaneaLogger.WriteDebug(string.Format("Running exe '{0}' with arguments: {1}", config.NuGetExePath, args));
 
             var process = new Process
-                              {
-                                  StartInfo =
-                                      new ProcessStartInfo(config.NuGetExePath)
-                                          {
-                                              Arguments = args,
-                                              RedirectStandardError = true,
-                                              RedirectStandardOutput = true,
-                                              UseShellExecute = false
-                                          }
-                              };
+                          {
+                              StartInfo =
+                                  new ProcessStartInfo(config.NuGetExePath)
+                                  {
+                                      Arguments = args,
+                                      RedirectStandardError = true,
+                                      RedirectStandardOutput = true,
+                                      UseShellExecute = false
+                                  }
+                          };
 
             process.OutputDataReceived += (sender, eventArgs) =>
             {
@@ -158,7 +158,7 @@ namespace Arbor.Castanea
             {
                 throw new InvalidOperationException(
                     string.Format("Failed to install packages in '{0}'. The process '{1}' exited with code {2}",
-                                  repository.Path, process.StartInfo.FileName, exitCode));
+                        repository.Path, process.StartInfo.FileName, exitCode));
             }
         }
 
@@ -193,7 +193,10 @@ namespace Arbor.Castanea
 
                     if (!rootDirectory.Exists)
                     {
-                        throw new Exception(string.Format("Cannot scan directory '{0}' for package config files since it does not exist", rootDirectory.FullName));
+                        throw new Exception(
+                            string.Format(
+                                "Cannot scan directory '{0}' for package config files since it does not exist",
+                                rootDirectory.FullName));
                     }
 
                     var packageConfigFiles = rootDirectory.GetFiles("packages.config", SearchOption.AllDirectories);
@@ -251,7 +254,7 @@ namespace Arbor.Castanea
                     Directory.Delete(tempFolder, true);
                 }
             }
-            
+
             return config;
         }
 
