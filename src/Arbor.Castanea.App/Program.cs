@@ -59,8 +59,8 @@ namespace Arbor.Castanea.App
                 string argument = args[4];
 
                 config.NoCache = argument != null &&
-                                                   argument.Equals("NoCache",
-                                                       StringComparison.InvariantCultureIgnoreCase);
+                                 argument.Equals("NoCache",
+                                     StringComparison.InvariantCultureIgnoreCase);
             }
 
             app.RestoreAllSolutionPackages(config, logInfo: Console.WriteLine, logError: Console.Error.WriteLine);
