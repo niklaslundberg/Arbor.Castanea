@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Xml.Linq;
 using Arbor.Aesculus.Core;
 
@@ -86,10 +87,37 @@ namespace Arbor.Castanea
 
             foreach (var repository in repositories)
             {
-                RestorePackage(repository, config);
+                TryRestorePackage(repository, config);
             }
 
             return repositories.Count;
+        }
+
+        static void TryRestorePackage(NuGetRepository repository, NuGetConfig config)
+        {
+            int maxAttempts = 3;
+
+            bool succeeded = false;
+
+            int attempt = 1;
+
+            while (!succeeded && attempt <= maxAttempts)
+            {
+                try
+                {
+                    RestorePackage(repository, config);
+                    succeeded = true;
+                }
+                catch (Exception ex)
+                {
+                    if (ex.IsFatal() || attempt == maxAttempts)
+                    {
+                        throw;
+                    }
+
+                    Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                }
+            }
         }
 
         static void RestorePackage(NuGetRepository repository, NuGetConfig config)
