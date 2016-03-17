@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Xml.Linq;
+
 using Arbor.Aesculus.Core;
 
 namespace Arbor.Castanea
@@ -18,44 +19,43 @@ namespace Arbor.Castanea
         {
             if (nuGetConfig == null)
             {
-                throw new ArgumentNullException("nuGetConfig");
+                throw new ArgumentNullException(nameof(nuGetConfig));
             }
 
             List<NuGetRepository> repositories;
 
             if (!nuGetConfig.PackageConfigFiles.Any())
             {
-                var fileInfo = new FileInfo(nuGetConfig.RepositoriesConfig);
+                FileInfo fileInfo = new FileInfo(nuGetConfig.RepositoriesConfig);
 
                 if (!fileInfo.Exists)
                 {
-                    throw new FileNotFoundException(string.Format("Could not find the repositories.config file '{0}'",
-                        nuGetConfig.RepositoriesConfig));
+                    throw new FileNotFoundException(
+                        $"Could not find the repositories.config file '{nuGetConfig.RepositoriesConfig}'");
                 }
 
-                var xdoc = XDocument.Load(nuGetConfig.RepositoriesConfig);
+                XDocument xdoc = XDocument.Load(nuGetConfig.RepositoriesConfig);
 
-                var repositoryPaths =
+                List<string> repositoryPaths =
                     xdoc.Descendants("repository")
                         .Select(repository => repository.Attribute("path").Value)
                         .ToList();
 
-                var repositoryFileDirectory = fileInfo.Directory;
+                DirectoryInfo repositoryFileDirectory = fileInfo.Directory;
 
                 if (repositoryFileDirectory == null)
                 {
-                    var message = string.Format("Could not find directory repository directory '{0}'",
-                        fileInfo.DirectoryName);
+                    string message = $"Could not find directory repository directory '{fileInfo.DirectoryName}'";
                     throw new DirectoryNotFoundException(message);
                 }
 
                 repositories =
                     repositoryPaths.Select(
                         path =>
-                            new NuGetRepository(Path.GetFullPath(Path.Combine(repositoryFileDirectory.FullName, path))))
+                        new NuGetRepository(Path.GetFullPath(Path.Combine(repositoryFileDirectory.FullName, path))))
                         .ToList();
 
-                CastaneaLogger.Write(string.Format("Found {0} NuGet repositories", repositories.Count));
+                CastaneaLogger.WriteDebug($"Found {repositories.Count} NuGet repositories");
             }
             else
             {
@@ -69,23 +69,23 @@ namespace Arbor.Castanea
 
         public int RestorePackages(IReadOnlyCollection<NuGetRepository> repositories, NuGetConfig config)
         {
-            var exePath = config.NuGetExePath;
-            var outputDir = config.OutputDirectory;
+            string exePath = config.NuGetExePath;
+            string outputDir = config.OutputDirectory;
 
             if (!Directory.Exists(outputDir))
             {
-                var message = string.Format("The restore output directory '{0}' does not exist", outputDir);
+                string message = $"The restore output directory '{outputDir}' does not exist";
 
-                Console.WriteLine(message);
+                CastaneaLogger.WriteDebug(message);
                 Directory.CreateDirectory(outputDir);
             }
 
             if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
             {
-                throw new FileNotFoundException(string.Format("NuGet.exe could not be found at path '{0}'", exePath));
+                throw new FileNotFoundException($"NuGet.exe could not be found at path '{exePath}'");
             }
 
-            foreach (var repository in repositories)
+            foreach (NuGetRepository repository in repositories)
             {
                 TryRestorePackage(repository, config);
             }
@@ -115,18 +115,18 @@ namespace Arbor.Castanea
                         throw;
                     }
 
-                    Thread.Sleep(TimeSpan.FromMilliseconds(500));
+                    Thread.Sleep(TimeSpan.FromMilliseconds(200));
                 }
             }
         }
 
         static void RestorePackage(NuGetRepository repository, NuGetConfig config)
         {
-            CastaneaLogger.Write(string.Format("Installing packages into directory '{0}', defined in '{1}'",
-                config.OutputDirectory, repository.Path));
+            CastaneaLogger.WriteDebug(
+                $"Installing packages into directory '{config.OutputDirectory}', defined in '{repository.Path}'");
 
-            var args = string.Format("restore \"{0}\" -PackagesDirectory \"{1}\" -NonInteractive", repository.Path,
-                config.OutputDirectory);
+            string args =
+                $"restore \"{repository.Path}\" -PackagesDirectory \"{config.OutputDirectory}\" -NonInteractive";
 
             if (CastaneaLogger.DebugLog != null)
             {
@@ -143,66 +143,66 @@ namespace Arbor.Castanea
                 args += " -NoCache";
             }
 
-            CastaneaLogger.WriteDebug(string.Format("Running exe '{0}' with arguments: {1}", config.NuGetExePath, args));
+            CastaneaLogger.WriteDebug($"Running exe '{config.NuGetExePath}' with arguments: {args}");
 
-            var process = new Process
-                          {
-                              StartInfo =
-                                  new ProcessStartInfo(config.NuGetExePath)
+            Process process = new Process
                                   {
-                                      Arguments = args,
-                                      RedirectStandardError = true,
-                                      RedirectStandardOutput = true,
-                                      UseShellExecute = false
-                                  }
-                          };
+                                      StartInfo =
+                                          new ProcessStartInfo(config.NuGetExePath)
+                                              {
+                                                  Arguments = args,
+                                                  RedirectStandardError = true,
+                                                  RedirectStandardOutput = true,
+                                                  UseShellExecute = false
+                                              }
+                                  };
 
             process.OutputDataReceived += (sender, eventArgs) =>
-            {
-                if (!string.IsNullOrWhiteSpace(eventArgs.Data))
                 {
-                    CastaneaLogger.Write(eventArgs.Data);
-                }
-            };
+                    if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        CastaneaLogger.WriteDebug(eventArgs.Data);
+                    }
+                };
             process.ErrorDataReceived += (sender, eventArgs) =>
-            {
-                if (!string.IsNullOrWhiteSpace(eventArgs.Data))
                 {
-                    CastaneaLogger.WriteError(eventArgs.Data);
-                }
-            };
+                    if (!string.IsNullOrWhiteSpace(eventArgs.Data))
+                    {
+                        CastaneaLogger.WriteError(eventArgs.Data);
+                    }
+                };
 
             process.Start();
             process.BeginErrorReadLine();
             process.BeginOutputReadLine();
             process.WaitForExit();
-            var exitCode = process.ExitCode;
+            int exitCode = process.ExitCode;
 
             if (exitCode == 0)
             {
-                CastaneaLogger.Write(string.Format("Successfully installed packages in '{0}'", repository.Path));
+                CastaneaLogger.WriteDebug($"Successfully installed packages in '{repository.Path}'");
             }
             else
             {
                 throw new InvalidOperationException(
-                    string.Format("Failed to install packages in '{0}'. The process '{1}' exited with code {2}",
-                        repository.Path, process.StartInfo.FileName, exitCode));
+                    $"Failed to install packages in '{repository.Path}'. The process '{process.StartInfo.FileName}' exited with code {exitCode}");
             }
         }
 
         public NuGetConfig EnsureConfig(NuGetConfig nuGetConfig, Func<string, string> findVcsRoot = null)
         {
-            Func<string, string> usedFindVcsRoot = findVcsRoot ?? (VcsPathHelper.FindVcsRootPath);
+            Func<string, string> usedFindVcsRoot = findVcsRoot ?? VcsPathHelper.FindVcsRootPath;
 
-            var config = nuGetConfig ?? new NuGetConfig();
+            NuGetConfig config = nuGetConfig ?? new NuGetConfig();
 
             if (!config.PackageConfigFiles.Any())
             {
                 if (config.RepositoriesConfig != null &&
-                    config.RepositoriesConfig.EndsWith("repositories.config",
+                    config.RepositoriesConfig.EndsWith(
+                        "repositories.config",
                         StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var configDir = new FileInfo(config.RepositoriesConfig).Directory;
+                    DirectoryInfo configDir = new FileInfo(config.RepositoriesConfig).Directory;
 
                     if (string.IsNullOrWhiteSpace(config.OutputDirectory))
                     {
@@ -211,25 +211,25 @@ namespace Arbor.Castanea
 
                     if (string.IsNullOrWhiteSpace(config.NuGetExePath))
                     {
-                        Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
+                        CastaneaLogger.WriteDebug("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
                         config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
                     }
                 }
                 else if (!string.IsNullOrWhiteSpace(config.RepositoriesConfig))
                 {
-                    var root = usedFindVcsRoot(config.RepositoriesConfig);
+                    string root = usedFindVcsRoot(config.RepositoriesConfig);
 
-                    var rootDirectory = new DirectoryInfo(root);
+                    DirectoryInfo rootDirectory = new DirectoryInfo(root);
 
                     if (!rootDirectory.Exists)
                     {
                         throw new Exception(
-                            string.Format(
-                                "Cannot scan directory '{0}' for package config files since it does not exist",
-                                rootDirectory.FullName));
+                            $"Cannot scan directory '{rootDirectory.FullName}' for package config files since it does not exist");
                     }
 
-                    var packageConfigFiles = rootDirectory.GetFiles("packages.config", SearchOption.AllDirectories);
+                    FileInfo[] packageConfigFiles = rootDirectory.GetFiles(
+                        "packages.config",
+                        SearchOption.AllDirectories);
 
                     config.PackageConfigFiles.AddRange(packageConfigFiles.Select(file => file.FullName));
                 }
@@ -237,7 +237,7 @@ namespace Arbor.Castanea
                 {
                     config.RepositoriesConfig = FindRepositoriesConfig(usedFindVcsRoot);
 
-                    var configDir = new FileInfo(config.RepositoriesConfig).Directory;
+                    DirectoryInfo configDir = new FileInfo(config.RepositoriesConfig).Directory;
 
                     if (string.IsNullOrWhiteSpace(config.OutputDirectory))
                     {
@@ -246,7 +246,7 @@ namespace Arbor.Castanea
 
                     if (string.IsNullOrWhiteSpace(config.NuGetExePath))
                     {
-                        Console.WriteLine("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
+                        CastaneaLogger.WriteDebug("No nuget.exe path specified, looking for ..\\.nuget\\nuget.exe");
                         config.NuGetExePath = Path.Combine(configDir.Parent.FullName, ".nuget", "nuget.exe");
                     }
                 }
@@ -262,25 +262,26 @@ namespace Arbor.Castanea
                 throw new InvalidOperationException("The NuGet exe path has not been specified");
             }
 
-            var nuGetExeExists = File.Exists(config.NuGetExePath);
+            bool nuGetExeExists = File.Exists(config.NuGetExePath);
 
             if (!nuGetExeExists)
             {
-                var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+                string tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
                 Directory.CreateDirectory(tempFolder);
-                Console.WriteLine("'{0}' does not exist, downloading NuGet.exe from NuGet.org", config.NuGetExePath);
+                CastaneaLogger.WriteDebug(
+                    $"'{config.NuGetExePath}' does not exist, downloading NuGet.exe from NuGet.org");
 
                 try
                 {
-                    var tempPath = Path.Combine(tempFolder, "nuget.exe");
-                    var webClient = new WebClient();
-                    webClient.DownloadFile("https://nuget.org/nuget.exe", tempPath);
+                    string tempPath = Path.Combine(tempFolder, "nuget.exe");
+                    WebClient webClient = new WebClient();
+                    webClient.DownloadFile("https://dist.nuget.org/win-x86-commandline/latest/nuget.exe", tempPath);
                     config.NuGetExePath = tempPath;
                 }
                 catch (WebException ex)
                 {
-                    Console.WriteLine(ex);
+                    CastaneaLogger.WriteDebug(ex.ToString());
                     Directory.Delete(tempFolder, true);
                 }
             }
@@ -290,18 +291,18 @@ namespace Arbor.Castanea
 
         string FindRepositoriesConfig(Func<string, string> usedFindVcsRoot)
         {
-            var vcsRoot = usedFindVcsRoot(null);
+            string vcsRoot = usedFindVcsRoot(null);
 
-            var directory = FindRepositoriesDirectory(new DirectoryInfo(vcsRoot));
+            DirectoryInfo directory = FindRepositoriesDirectory(new DirectoryInfo(vcsRoot));
 
             if (directory == null)
             {
                 throw new FileNotFoundException("Could not find repositories.config anywhere");
             }
 
-            var path = Path.Combine(directory.FullName, "repositories.config");
+            string path = Path.Combine(directory.FullName, "repositories.config");
 
-            CastaneaLogger.Write(string.Format("Repositories.config found at '{0}' after {1} iterations", path, _counter));
+            CastaneaLogger.WriteDebug($"Repositories.config found at '{path}' after {_counter} iterations");
 
             return path;
         }
@@ -312,28 +313,33 @@ namespace Arbor.Castanea
 
             if (folder == null)
             {
-                throw new ArgumentNullException("folder");
+                throw new ArgumentNullException(nameof(folder));
             }
 
-            var forbiddenNames = new List<string> {".git", "bin", "obj"};
+            List<string> forbiddenNames = new List<string>
+                                              {
+                                                  ".git",
+                                                  "bin",
+                                                  "obj"
+                                              };
 
-            if (forbiddenNames.Any(name => name.Equals(folder.Name)))
+            if (forbiddenNames.Any(name => name.Equals(folder.Name, StringComparison.InvariantCultureIgnoreCase)))
             {
                 return null;
             }
 
-            var configFile = folder.GetFiles("repositories.config").FirstOrDefault();
+            FileInfo configFile = folder.GetFiles("repositories.config").FirstOrDefault();
 
             if (configFile != null)
             {
                 return folder;
             }
 
-            var subDirs = folder.GetDirectories();
+            DirectoryInfo[] subDirs = folder.GetDirectories();
 
-            foreach (var directoryInfo in subDirs)
+            foreach (DirectoryInfo directoryInfo in subDirs)
             {
-                var configDir = FindRepositoriesDirectory(directoryInfo);
+                DirectoryInfo configDir = FindRepositoriesDirectory(directoryInfo);
 
                 if (configDir != null)
                 {

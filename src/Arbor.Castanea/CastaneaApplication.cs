@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 
@@ -14,10 +15,15 @@ namespace Arbor.Castanea
         /// <param name="logError"></param>
         /// <param name="logDebug"></param>
         /// <param name="removeNuGetDirectoryAfterRestore"></param>
+        /// <param name="findVcsRootPath"></param>
         /// <returns></returns>
-        public int RestoreAllSolutionPackages(NuGetConfig nuGetConfig, Action<string> logInfo = null,
-            Action<string> logError = null, Action<string> logDebug = null,
-            bool removeNuGetDirectoryAfterRestore = false, Func<string, string> findVcsRootPath = null)
+        public int RestoreAllSolutionPackages(
+            NuGetConfig nuGetConfig,
+            Action<string> logInfo = null,
+            Action<string> logError = null,
+            Action<string> logDebug = null,
+            bool removeNuGetDirectoryAfterRestore = false,
+            Func<string, string> findVcsRootPath = null)
         {
             CastaneaLogger.SetErrorLoggerAction(logError);
             CastaneaLogger.SetLoggerAction(logInfo);
@@ -28,13 +34,13 @@ namespace Arbor.Castanea
                 Assembly entryAssembly = Assembly.GetExecutingAssembly();
                 Version version = entryAssembly.GetName().Version;
 
-                CastaneaLogger.Write(GetType().Namespace + ", " + version);
+                CastaneaLogger.WriteDebug(GetType().Namespace + ", " + version);
 
                 var helper = new NuGetHelper();
 
-                var repositoriesConfig = helper.EnsureConfig(nuGetConfig, findVcsRootPath);
+                NuGetConfig repositoriesConfig = helper.EnsureConfig(nuGetConfig, findVcsRootPath);
 
-                var repositories = helper.GetNuGetRepositories(repositoriesConfig);
+                IReadOnlyCollection<NuGetRepository> repositories = helper.GetNuGetRepositories(repositoriesConfig);
 
                 return helper.RestorePackages(repositories, repositoriesConfig);
             }
@@ -44,16 +50,19 @@ namespace Arbor.Castanea
                 {
                     if (!string.IsNullOrWhiteSpace(nuGetConfig.NuGetExePath))
                     {
-                        if (
-                            nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(),
-                                StringComparison.InvariantCultureIgnoreCase) >=
-                            0)
+                        bool isInTempDirectory = nuGetConfig.NuGetExePath.IndexOf(Path.GetTempPath(),
+                            StringComparison.InvariantCultureIgnoreCase) >= 0;
+
+                        if (isInTempDirectory)
                         {
                             var fileInfo = new FileInfo(nuGetConfig.NuGetExePath);
 
-                            if (Directory.Exists(fileInfo.DirectoryName))
+                            if (fileInfo.DirectoryName != null)
                             {
-                                Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                                if (Directory.Exists(fileInfo.DirectoryName))
+                                {
+                                    Directory.Delete(fileInfo.DirectoryName, recursive: true);
+                                }
                             }
                         }
                     }

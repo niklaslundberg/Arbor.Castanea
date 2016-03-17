@@ -4,7 +4,7 @@ using System.Threading;
 
 namespace Arbor.Castanea
 {
-    public static class ExceptionExtensions
+    internal static class ExceptionExtensions
     {
         public static bool IsFatal(this Exception ex)
         {

@@ -2,16 +2,11 @@
 {
     public class NuGetRepository
     {
-        readonly string _path;
-
         public NuGetRepository(string path)
         {
-            _path = path;
+            Path = path;
         }
 
-        public string Path
-        {
-            get { return _path; }
-        }
+        public string Path { get; }
     }
 }
