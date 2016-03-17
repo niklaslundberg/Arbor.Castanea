@@ -8,20 +8,11 @@ namespace Arbor.Castanea
         static Action<string> _errorLog;
         static Action<string> _debugLog;
 
-        public static Action<string> Log
-        {
-            get { return _log; }
-        }
+        public static Action<string> Log => _log;
 
-        public static Action<string> ErrorLog
-        {
-            get { return _errorLog; }
-        }
+        public static Action<string> ErrorLog => _errorLog;
 
-        public static Action<string> DebugLog
-        {
-            get { return _debugLog; }
-        }
+        public static Action<string> DebugLog => _debugLog;
 
         public static void SetLoggerAction(Action<string> loggerAction)
         {
@@ -40,18 +31,12 @@ namespace Arbor.Castanea
 
         public static void Write(string message)
         {
-            if (_log != null)
-            {
-                _log(message);
-            }
+            _log?.Invoke(message);
         }
 
         public static void WriteDebug(string message)
         {
-            if (_debugLog != null)
-            {
-                _debugLog(message);
-            }
+            _debugLog?.Invoke(message);
         }
 
         public static void WriteError(string message)
@@ -61,10 +46,7 @@ namespace Arbor.Castanea
                 return;
             }
 
-            if (_errorLog != null)
-            {
-                _errorLog(message);
-            }
+            _errorLog?.Invoke(message);
         }
     }
 }
